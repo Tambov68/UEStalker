@@ -6,43 +6,65 @@ void UItemObject::InitializeFromAsset(UMasterItemDataAsset* InAsset, int32 InSta
 {
 	SourceAsset = InAsset;
 
-	if (!SourceAsset)
-	{
-		ItemDetails = FMasterItemDetails{};
-		TradeConfig = FItemTradeConfig{};
-		DurabilityConfig = FItemDurabilityConfig{};
-		ChargeConfig = FItemChargeConfig{};
-		OutfitStatsConfig = FItemOutfitStatsConfig{};
-		WeaponStatsConfig = FItemWeaponsStatsConfig{};
-		MagazineConfig = FItemMagazineConfig{};
-		ConsumablesStats = FConsumablesStats{};
-		Runtime = FItemRuntimeState{};
-		InsertedMagazine = nullptr;
-		MagazineCurrentAmmo = 0;
-		MagazineLoadedAmmoType = EAmmoType::AmmoType_None;
-		MagazineAmmoUnitWeight = 0.f;
-		return;
-	}
+	// Сначала СБРАСЫВАЕМ все локальные конфиги в дефолт (пустоту)
+	ItemDetails       = FMasterItemDetails{};
+	TradeConfig       = FItemTradeConfig{};
+	DurabilityConfig  = FItemDurabilityConfig{};
+	ChargeConfig      = FItemChargeConfig{};
+	OutfitStatsConfig = FItemOutfitStatsConfig{};
+	WeaponStatsConfig = FItemWeaponsStatsConfig{};
+	MagazineConfig    = FItemMagazineConfig{};
+	ConsumablesStats  = FConsumablesStats{};
 
-	ItemDetails       = SourceAsset->ItemDetails;
-	TradeConfig       = SourceAsset->TradeConfig;
-	DurabilityConfig  = SourceAsset->DurabilityConfig;
-	ChargeConfig      = SourceAsset->ChargeConfig;
-	OutfitStatsConfig = SourceAsset->OutfitStatsConfig;
-	WeaponStatsConfig = SourceAsset->WeaponStatsConfig;
-	ConsumablesStats  = SourceAsset->ConsumablesStats;
-	MagazineConfig	  = SourceAsset->MagazineConfig;
-
-	// Reset runtime attachments
+	// Runtime сброс
+	Runtime = FItemRuntimeState{};
 	InsertedMagazine = nullptr;
 	MagazineCurrentAmmo = 0;
 	MagazineLoadedAmmoType = EAmmoType::AmmoType_None;
 	MagazineAmmoUnitWeight = 0.f;
 
-	// Runtime init
+	if (!SourceAsset)
+	{
+		return;
+	}
+
+	// Заполняем ОБЩИЕ данные (они есть в базовом классе)
+	ItemDetails = SourceAsset->ItemDetails;
+	TradeConfig = SourceAsset->TradeConfig;
+
+	// --- ОРУЖИЕ ---
+	if (const UWeaponDataAsset* WeaponData = Cast<UWeaponDataAsset>(SourceAsset))
+	{
+		WeaponStatsConfig = WeaponData->WeaponStatsConfig;
+		DurabilityConfig  = WeaponData->DurabilityConfig;
+	}
+	// --- БРОНЯ / ШЛЕМЫ / РЮКЗАКИ ---
+	else if (const UOutfitDataAsset* OutfitData = Cast<UOutfitDataAsset>(SourceAsset))
+	{
+		OutfitStatsConfig = OutfitData->OutfitStatsConfig;
+		DurabilityConfig  = OutfitData->DurabilityConfig;
+	}
+	// --- РАСХОДНИКИ (Еда, воды, Медицина) ---
+	else if (const UConsumableDataAsset* ConsumableData = Cast<UConsumableDataAsset>(SourceAsset))
+	{
+		ConsumablesStats = ConsumableData->ConsumablesStats;
+	}
+	// --- ГАДЖЕТЫ (Детекторы и т.д.) ---
+	else if (const UUsableItemDataAsset* UsableData = Cast<UUsableItemDataAsset>(SourceAsset))
+	{
+		ChargeConfig = UsableData->ChargeConfig;
+	}
+	// --- АТТАЧМЕНТЫ / МАГАЗИНЫ ---
+	else if (const UAttachmentDataAsset* AttachData = Cast<UAttachmentDataAsset>(SourceAsset))
+	{
+		MagazineConfig = AttachData->MagazineConfig;
+	}
+
+	// Runtime инициализация
 	Runtime.StackCount = 1;
 	SetStackCount(InStackCount);
 
+	// Устанавливаем текущую прочность / заряд, если они есть в конфиге
 	Runtime.CurrDurability = DurabilityConfig.bHasDurability ? DurabilityConfig.MaxDurability : 0.f;
 	Runtime.CurrCharge     = ChargeConfig.bHasCharge ? ChargeConfig.MaxCharge : 0.f;
 	Runtime.bIsRotated     = false;
