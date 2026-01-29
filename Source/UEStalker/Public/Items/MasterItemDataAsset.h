@@ -22,22 +22,34 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Trade")
 	FItemTradeConfig TradeConfig;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Durability")
+	// Показываем только если предмет может иметь прочность (Оружие, Броня, Шлем и т.д.)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Durability", 
+		meta=(EditCondition="ItemDetails.ItemCategory == EItemCategory::ItemCat_Weapons || ItemDetails.ItemCategory == EItemCategory::ItemCat_Armor || ItemDetails.ItemCategory == EItemCategory::ItemCat_Helmet", EditConditionHides))
 	FItemDurabilityConfig DurabilityConfig;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Charge")
+	// Показываем, например, только для UsableItems (ПДА, Детекторы)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Charge",
+		meta=(EditCondition="ItemDetails.ItemCategory == EItemCategory::ItemCat_UsableItems", EditConditionHides))
 	FItemChargeConfig ChargeConfig;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Stats|Outfit")
+	// Показываем для Брони, Шлемов, Рюкзаков
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Stats|Outfit",
+		meta=(EditCondition="ItemDetails.ItemCategory == EItemCategory::ItemCat_Armor || ItemDetails.ItemCategory == EItemCategory::ItemCat_Helmet || ItemDetails.ItemCategory == EItemCategory::ItemCat_Backpack", EditConditionHides))
 	FItemOutfitStatsConfig OutfitStatsConfig;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Stats|Weapon")
+	// Показываем ТОЛЬКО если категория Weapons
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Stats|Weapon",
+		meta=(EditCondition="ItemDetails.ItemCategory == EItemCategory::ItemCat_Weapons", EditConditionHides))
 	FItemWeaponsStatsConfig WeaponStatsConfig;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Stats|Magazine")
+	// Показываем только для Магазинов
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Stats|Magazine",
+		meta=(EditCondition="ItemDetails.ItemSubCategory == EItemSubCategory::ItemSubCat_Attachments_Magazine", EditConditionHides))
 	FItemMagazineConfig MagazineConfig;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Stats|Consumable")
+	// Показываем для Еды, Воды, Медицины
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Stats|Consumable",
+		meta=(EditCondition="ItemDetails.ItemSubCategory == EItemSubCategory::ItemSubCat_Items_Water || ItemDetails.ItemSubCategory == EItemSubCategory::ItemSubCat_Items_Food || ItemDetails.ItemSubCategory == EItemSubCategory::ItemSubCat_Items_Medicine", EditConditionHides))
 	FConsumablesStats ConsumablesStats;
 
 	// Чтобы в PrimaryAsset системе было красиво
