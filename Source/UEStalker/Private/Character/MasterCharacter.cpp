@@ -392,8 +392,13 @@ bool AMasterCharacter::CanAimNow() const
 	}
 
 	// Разреши целиться только когда реально оружие
-	if (CurrentWeaponState != EWeaponState::Weapon_AK &&
-		CurrentWeaponState != EWeaponState::Weapon_Pistol)
+	if (CurrentWeaponState != EWeaponState::Weapon_Rifle_01 &&
+		CurrentWeaponState != EWeaponState::Weapon_Rifle_02 &&
+		CurrentWeaponState != EWeaponState::Weapon_Sniper &&
+		CurrentWeaponState != EWeaponState::Weapon_Shotgun &&
+		CurrentWeaponState != EWeaponState::Weapon_Rocket_Launcher &&
+		CurrentWeaponState != EWeaponState::Weapon_Automatic_Gun &&
+		CurrentWeaponState != EWeaponState::Weapon_Pistol_Single)
 	{
 		return false;
 	}
@@ -887,9 +892,15 @@ void AMasterCharacter::UpdateWeaponStateFromActiveSlot()
 	}
 
 	if (CurrentWeaponState == EWeaponState::Unarmed ||
-	CurrentWeaponState == EWeaponState::Grenade ||
-	CurrentWeaponState == EWeaponState::Grenade_Bolt ||
-	CurrentWeaponState == EWeaponState::Weapon_Knife)
+	CurrentWeaponState == EWeaponState::Melee_Knife ||
+	CurrentWeaponState == EWeaponState::Melee_Cub ||
+	CurrentWeaponState == EWeaponState::Melee_Spear ||
+	CurrentWeaponState == EWeaponState::Melee_Candle ||
+	CurrentWeaponState == EWeaponState::Melee_Torch ||
+	CurrentWeaponState == EWeaponState::Melee_Flashlight ||
+	CurrentWeaponState == EWeaponState::Melee_Grenade ||
+	CurrentWeaponState == EWeaponState::UsableItem ||
+	CurrentWeaponState == EWeaponState::UsableItem_Binocular)
 	{
 		StopAim();
 	}
@@ -956,24 +967,45 @@ EWeaponState AMasterCharacter::DeriveWeaponStateFromItem(const UItemObject* Item
 		switch (Item->ItemDetails.GrenadeType)
 		{
 		case EGrenadeType::Grenade_Bolt:
-			return EWeaponState::Grenade_Bolt;
 		case EGrenadeType::Grenade_Frag:
-			return EWeaponState::Grenade;
+		case EGrenadeType::Grenade_Chemlight:
+			return EWeaponState::Melee_Grenade;
+			
 		default:
-			return EWeaponState::Grenade;
+			return EWeaponState::Melee_Grenade;
 		}
 	}
 
 	// Нож
 	if (Item->ItemDetails.ItemSubCategory == EItemSubCategory::ItemSubCat_Weapons_Knife)
 	{
-		return EWeaponState::Weapon_Knife;
+		return EWeaponState::Melee_Knife;
+	}
+	if (Item->ItemDetails.ItemSubCategory == EItemSubCategory::ItemSubCat_Weapons_Cub)
+	{
+		return EWeaponState::Melee_Cub;
+	}
+	if (Item->ItemDetails.ItemSubCategory == EItemSubCategory::ItemSubCat_Weapons_Candle)
+	{
+		return EWeaponState::Melee_Candle;
+	}
+	if (Item->ItemDetails.ItemSubCategory == EItemSubCategory::ItemSubCat_Weapons_Spear)
+	{
+		return EWeaponState::Melee_Spear;
+	}
+	if (Item->ItemDetails.ItemSubCategory == EItemSubCategory::ItemSubCat_Weapons_Flashlight)
+	{
+		return EWeaponState::Melee_Flashlight;
+	}
+	if (Item->ItemDetails.ItemSubCategory == EItemSubCategory::ItemSubCat_Weapons_Torch)
+	{
+		return EWeaponState::Melee_Torch;
 	}
 
 	// Пистолет
 	if (Item->ItemDetails.ItemSubCategory == EItemSubCategory::ItemSubCat_Weapons_HG)
 	{
-		return EWeaponState::Weapon_Pistol;
+		return EWeaponState::Weapon_Pistol_Single;
 	}
 
 	// Оружие
@@ -981,13 +1013,27 @@ EWeaponState AMasterCharacter::DeriveWeaponStateFromItem(const UItemObject* Item
 	{
 		switch (Item->ItemDetails.WeaponType)
 		{
-		case EWeaponType::Weapon_AK12:
-		case EWeaponType::Weapon_AK74:
-			return EWeaponState::Weapon_AK;
+		case EWeaponType::Weapon_ASR:
+			return EWeaponState::Weapon_Rifle_01;
+
+		case EWeaponType::Weapon_MG:
+			return EWeaponState::Weapon_Rifle_02;
+
+		case EWeaponType::Weapon_SMG:
+			return EWeaponState::Weapon_Automatic_Gun;
+			
+		case EWeaponType::Weapon_SHTG:
+			return EWeaponState::Weapon_Shotgun;
+			
+		case EWeaponType::Weapon_RPG:
+			return EWeaponState::Weapon_Rocket_Launcher;
+
+		case EWeaponType::Weapon_SNP:
+			return EWeaponState::Weapon_Sniper;
 
 		default:
 			// Fallback: всё что не HG/Knife/Grenade считаем "автоматной" стойкой
-			return EWeaponState::Weapon_AK;
+			return EWeaponState::Weapon_Rifle_01;
 		}
 	}
 
