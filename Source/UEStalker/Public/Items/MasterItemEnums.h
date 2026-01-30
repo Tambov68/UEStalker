@@ -31,15 +31,20 @@ enum class EItemSubCategory : uint8
 	ItemSubCat_None UMETA(DisplayName="None"),
 
 	// ItemCat_Weapons
-	ItemSubCat_Weapons_ASR     UMETA(DisplayName="ASR"),
-	ItemSubCat_Weapons_SNP     UMETA(DisplayName="SNP"),
-	ItemSubCat_Weapons_SMG     UMETA(DisplayName="SMG"),
-	ItemSubCat_Weapons_SHTG    UMETA(DisplayName="SHTG"),
-	ItemSubCat_Weapons_MG      UMETA(DisplayName="MG"),
-	ItemSubCat_Weapons_HG      UMETA(DisplayName="HG"),
-	ItemSubCat_Weapons_Knife   UMETA(DisplayName="Knife"),
-	ItemSubCat_Weapons_RPG     UMETA(DisplayName="RPG"),
-	ItemSubCat_Weapons_Grenade UMETA(DisplayName="Grenade"),
+	ItemSubCat_Weapons_ASR			UMETA(DisplayName="ASR"),
+	ItemSubCat_Weapons_SNP			UMETA(DisplayName="SNP"),
+	ItemSubCat_Weapons_SMG			UMETA(DisplayName="SMG"),
+	ItemSubCat_Weapons_SHTG			UMETA(DisplayName="SHTG"),
+	ItemSubCat_Weapons_MG			UMETA(DisplayName="MG"),
+	ItemSubCat_Weapons_HG			UMETA(DisplayName="HG"),
+	ItemSubCat_Weapons_Knife		UMETA(DisplayName="Knife"),
+	ItemSubCat_Weapons_Cub			UMETA(DisplayName="Cub"),
+	ItemSubCat_Weapons_Candle		UMETA(DisplayName="Candle"),
+	ItemSubCat_Weapons_Spear		UMETA(DisplayName="Spear"),
+	ItemSubCat_Weapons_Torch		UMETA(DisplayName="Torch"),
+	ItemSubCat_Weapons_Flashlight   UMETA(DisplayName="Flashlight"),
+	ItemSubCat_Weapons_RPG			UMETA(DisplayName="RPG"),
+	ItemSubCat_Weapons_Grenade		UMETA(DisplayName="Grenade"),
 
 	// ItemCat_Attachments
 	ItemSubCat_Attachments_Scope       UMETA(DisplayName="Scope"),
@@ -121,25 +126,27 @@ enum class EAmmoType : uint8
 UENUM(BlueprintType)
 enum class EWeaponType : uint8
 {
-	Weapon_None      UMETA(DisplayName="None"),
-
-	// ItemCat_Weapons -> ItemSubCat_Weapons_ASR
-	Weapon_AK74      UMETA(DisplayName="AK74"),
-	Weapon_AK12      UMETA(DisplayName="AK12"),
-
-	// ItemCat_Weapons -> ItemSubCat_Weapons_SNP
-	Weapon_Vintorezz UMETA(DisplayName="Vintorezz"),
+	Weapon_None     UMETA(DisplayName="None"),
+	
+	Weapon_ASR		UMETA(DisplayName="Assault Rifle"),
+	Weapon_SNP		UMETA(DisplayName="Sniper Rifle"),
+	Weapon_SMG		UMETA(DisplayName="Sub Machine Gun"),
+	Weapon_SHTG		UMETA(DisplayName="Shotgun"),
+	Weapon_MG		UMETA(DisplayName="Machine Gun"),
+	Weapon_HG		UMETA(DisplayName="Pistol"),
+	Weapon_MELEE	UMETA(DisplayName="Melee"),
+	Weapon_RPG		UMETA(DisplayName="RPG"),
 };
 
 UENUM(BlueprintType)
 enum class EGrenadeType : uint8
 {
-	Grenade_None UMETA(DisplayName="None"),
+	Grenade_None		UMETA(DisplayName="None"),
 
 	// ItemCat_Weapons -> ItemSubCat_Weapons_Grenade
-	Grenade_Bolt UMETA(DisplayName="Bolt"),
-	Grenade_Frag UMETA(DisplayName="Frag"),
-	Grenade_Chemlight UMETA(DisplayName="Chemlight"),
+	Grenade_Bolt		UMETA(DisplayName="Bolt"),
+	Grenade_Frag		UMETA(DisplayName="Frag"),
+	Grenade_Chemlight	UMETA(DisplayName="Chemlight"),
 };
 
 UENUM(BlueprintType)
@@ -153,16 +160,29 @@ enum class EMagazineType : uint8
 	Mag_Vintorezz UMETA(DisplayName="Mag Vintorezz"),
 };
 
-/** Состояние оружия для AnimInstance */
+/** Состояние стойки для AnimInstance */
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
 {
-	Unarmed       UMETA(DisplayName="Unarmed"),
-	Grenade_Bolt  UMETA(DisplayName="Bolt"),
-	Grenade       UMETA(DisplayName="Grenade"),
-	Weapon_AK   UMETA(DisplayName="AK"),
-	Weapon_Pistol UMETA(DisplayName="Pistol"),
-	Weapon_Knife  UMETA(DisplayName="Knife"),
+	Unarmed					UMETA(DisplayName="Unarmed"),
+	Melee_Knife				UMETA(DisplayName="Knife"),
+	Melee_Cub				UMETA(DisplayName="Cub"),
+	Melee_Spear				UMETA(DisplayName="Spear"),
+	Melee_Candle			UMETA(DisplayName="Candle"),
+	Melee_Torch				UMETA(DisplayName="Torch"),
+	Melee_Flashlight		UMETA(DisplayName="Flashlight"),
+	Melee_Grenade			UMETA(DisplayName="Grenade"),
+	Weapon_Rifle_01			UMETA(DisplayName="Rifle 01"),
+	Weapon_Rifle_02			UMETA(DisplayName="Rifle 02"),
+	Weapon_Sniper			UMETA(DisplayName="Sniper"),
+	Weapon_Shotgun			UMETA(DisplayName="Shotgun"),
+	Weapon_Rocket_Launcher	UMETA(DisplayName="Rocket Launcher"),
+	Weapon_Automatic_Gun	UMETA(DisplayName="SMG"),
+	Weapon_Pistol_Shield	UMETA(DisplayName="Pistol Shield"),
+	Weapon_Pistol_Knife		UMETA(DisplayName="Pistol Knife"),
+	Weapon_Pistol_Single	UMETA(DisplayName="Pistol Single"),
+	UsableItem				UMETA(DisplayName="Usable Item"),
+	UsableItem_Binocular	UMETA(DisplayName="Binocular"),
 };
 
 // (опционально) фильтр вкладок/сортировки UI
