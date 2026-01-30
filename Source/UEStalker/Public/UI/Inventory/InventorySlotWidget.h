@@ -7,10 +7,10 @@
 #include "Components/EquipmentComponent.h"
 #include "InventorySlotWidget.generated.h"
 
+class UTextBlock;
 class USizeBox;
 class UBorder;
 class UImage;
-class UProgressBar;
 class UItemObject;
 class UMaterialInterface;
 class UDragDropOperation;
@@ -36,8 +36,8 @@ public:
 	UPROPERTY(meta=(BindWidget), BlueprintReadOnly)
 	TObjectPtr<UImage> Icon = nullptr;
 
-	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly)
-	TObjectPtr<UProgressBar> DurabilityBar = nullptr;
+	UPROPERTY(meta = (BindWidgetOptional), BlueprintReadOnly)
+	TObjectPtr<UTextBlock> DurabilityText = nullptr;
 
 	// ===== Runtime refs =====
 	UPROPERTY(BlueprintReadOnly, Category="Slot")

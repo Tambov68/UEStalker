@@ -8,7 +8,6 @@
 class USizeBox;
 class UBorder;
 class UImage;
-class UProgressBar;
 class UTextBlock;
 class UItemObject;
 class UInventoryComponent;
@@ -39,8 +38,8 @@ public:
 	UPROPERTY(meta=(BindWidget), BlueprintReadOnly)
 	TObjectPtr<UTextBlock> CountText = nullptr;
 
-	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly)
-	TObjectPtr<UProgressBar> DurabilityBar = nullptr;
+	UPROPERTY(meta = (BindWidgetOptional), BlueprintReadOnly)
+	TObjectPtr<UTextBlock> DurabilityText = nullptr;
 
 	// ===== Runtime =====
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Item", meta=(ExposeOnSpawn="true"))

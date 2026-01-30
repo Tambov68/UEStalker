@@ -6,7 +6,6 @@
 #include "Components/SizeBox.h"
 #include "Components/Border.h"
 #include "Components/Image.h"
-#include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Components/InventoryComponent.h"
 #include "Items/ItemObject.h"
@@ -237,20 +236,49 @@ void UInventoryItemWidget::RefreshCountVisual()
 
 void UInventoryItemWidget::RefreshDurabilityVisual()
 {
-	if (!IsValid(DurabilityBar))
+	if (!IsValid(DurabilityText))
 	{
 		return;
 	}
-
-	if (!IsValid(ItemObject) || !ItemObject->DurabilityConfig.bHasDurability || ItemObject->DurabilityConfig.MaxDurability <= KINDA_SMALL_NUMBER)
+	
+	if (!IsValid(ItemObject) || !ItemObject->DurabilityConfig.bHasDurability || ItemObject->DurabilityConfig.MaxDurability <= UE_KINDA_SMALL_NUMBER)
 	{
-		DurabilityBar->SetVisibility(ESlateVisibility::Collapsed);
-		DurabilityBar->SetPercent(1.f);
+		DurabilityText->SetVisibility(ESlateVisibility::Collapsed);
 		return;
 	}
 
-	DurabilityBar->SetVisibility(ESlateVisibility::Visible);
-	DurabilityBar->SetPercent(CalcDurability(ItemObject));
+	DurabilityText->SetVisibility(ESlateVisibility::HitTestInvisible);
+	
+	const float MaxD = ItemObject->DurabilityConfig.MaxDurability;
+	const float CurrD = ItemObject->Runtime.CurrDurability;
+	const float PercentFloat = (MaxD > 0.f) ? (CurrD / MaxD) : 0.f;
+	const int32 PercentInt = FMath::Clamp(FMath::RoundToInt(PercentFloat * 100.0f), 0, 100);
+
+	DurabilityText->SetText(FText::FromString(FString::Printf(TEXT("%d%%"), PercentInt)));
+	FLinearColor NewColor = FLinearColor::White;
+
+	if (PercentInt >= 90)
+	{
+		// 100% - Голубоватый (Cyan)
+		NewColor = FLinearColor(0.0f, 0.8f, 1.0f, 1.0f);
+	}
+	else if (PercentInt >= 50)
+	{
+		// 75% - Зеленый
+		NewColor = FLinearColor::Green;
+	}
+	else if (PercentInt >= 25)
+	{
+		// 35% - Оранжевый
+		NewColor = FLinearColor(1.0f, 0.5f, 0.0f, 1.0f);
+	}
+	else
+	{
+		// 15% - Красный
+		NewColor = FLinearColor::Red;
+	}
+	
+	DurabilityText->SetColorAndOpacity(FSlateColor(NewColor));
 }
 
 float UInventoryItemWidget::CalcDurability(const UItemObject* Item)

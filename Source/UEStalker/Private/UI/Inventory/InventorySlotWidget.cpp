@@ -2,10 +2,10 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/DragDropOperation.h"
 #include "Components/SizeBox.h"
-#include "Components/ProgressBar.h"
 #include "Components/Border.h"
 #include "Components/Image.h"
 #include "Components/InventoryComponent.h"
+#include "Components/TextBlock.h"
 #include "Materials/MaterialInterface.h"
 #include "Items/ItemObject.h"
 #include "UI/Inventory/Context/EquipmentDragDropOperation.h"
@@ -417,10 +417,9 @@ void UInventorySlotWidget::ClearVisual()
 		Icon->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.f));
 	}
 
-	if (IsValid(DurabilityBar))
+	if (IsValid(DurabilityText))
 	{
-		DurabilityBar->SetVisibility(ESlateVisibility::Collapsed);
-		DurabilityBar->SetPercent(1.f);
+		DurabilityText->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
 
@@ -473,20 +472,49 @@ void UInventorySlotWidget::ApplyDesignSize()
 
 void UInventorySlotWidget::RefreshDurabilityVisual(UItemObject* Item)
 {
-	if (!IsValid(DurabilityBar))
+	if (!IsValid(DurabilityText))
 	{
 		return;
 	}
-
-	if (!IsValid(Item) || !Item->DurabilityConfig.bHasDurability || Item->DurabilityConfig.MaxDurability <= KINDA_SMALL_NUMBER)
+	
+	if (!IsValid(Item) || !Item->DurabilityConfig.bHasDurability || Item->DurabilityConfig.MaxDurability <= UE_KINDA_SMALL_NUMBER)
 	{
-		DurabilityBar->SetVisibility(ESlateVisibility::Collapsed);
-		DurabilityBar->SetPercent(1.f);
+		DurabilityText->SetVisibility(ESlateVisibility::Collapsed);
 		return;
 	}
+	
+	DurabilityText->SetVisibility(ESlateVisibility::HitTestInvisible);
+	
+	const float MaxD = Item->DurabilityConfig.MaxDurability;
+	const float CurrD = Item->Runtime.CurrDurability;
+	const float PercentFloat = (MaxD > 0.f) ? (CurrD / MaxD) : 0.f;
+	const int32 PercentInt = FMath::Clamp(FMath::RoundToInt(PercentFloat * 100.0f), 0, 100);
+	
+	DurabilityText->SetText(FText::FromString(FString::Printf(TEXT("%d%%"), PercentInt)));
+	FLinearColor NewColor = FLinearColor::White;
 
-	DurabilityBar->SetVisibility(ESlateVisibility::Visible);
-	DurabilityBar->SetPercent(CalcDurability(Item));
+	if (PercentInt >= 90)
+	{
+		// 100% - Голубоватый (Cyan)
+		NewColor = FLinearColor(0.0f, 0.8f, 1.0f, 1.0f);
+	}
+	else if (PercentInt >= 50)
+	{
+		// 75% - Зеленый
+		NewColor = FLinearColor::Green;
+	}
+	else if (PercentInt >= 25)
+	{
+		// 35% - Оранжевый
+		NewColor = FLinearColor(1.0f, 0.5f, 0.0f, 1.0f);
+	}
+	else
+	{
+		// 15% - Красный
+		NewColor = FLinearColor::Red;
+	}
+	
+	DurabilityText->SetColorAndOpacity(FSlateColor(NewColor));
 }
 
 float UInventorySlotWidget::CalcDurability(const UItemObject* Item)

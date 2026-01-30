@@ -899,8 +899,7 @@ void AMasterCharacter::UpdateWeaponStateFromActiveSlot()
 	CurrentWeaponState == EWeaponState::Melee_Torch ||
 	CurrentWeaponState == EWeaponState::Melee_Flashlight ||
 	CurrentWeaponState == EWeaponState::Melee_Grenade ||
-	CurrentWeaponState == EWeaponState::UsableItem ||
-	CurrentWeaponState == EWeaponState::UsableItem_Binocular)
+	CurrentWeaponState == EWeaponState::UsableItem)
 	{
 		StopAim();
 	}
