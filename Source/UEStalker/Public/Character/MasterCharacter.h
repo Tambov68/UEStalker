@@ -8,6 +8,7 @@
 #include "MasterCharacter.generated.h"
 
 enum class EEquipmentSlotId : uint8;
+class UUserWidget;
 class UInputComponent;
 class USkeletalMeshComponent;
 class UCameraComponent;
@@ -98,6 +99,9 @@ class UESTALKER_API AMasterCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess="true"))
 	UInputAction* ReloadAction = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess="true"))
+	UInputAction* FireAction = nullptr;
+
 public:
 	AMasterCharacter();
 
@@ -111,6 +115,10 @@ protected:
 	void Reload();
 
 	void UpdateAim(float DeltaSeconds);
+
+	void StartFire();
+	void StopFire();
+	void FireShot();
 	bool CanAimNow() const;
 
 	void RefreshAimFromActiveWeapon();
@@ -127,6 +135,9 @@ protected:
 	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 	// End of APawn interface
+
+	/** Receive damage from weapons or environment. */
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	UFUNCTION()
 	void ToggleInventory();
@@ -340,4 +351,90 @@ public:
 
 	UFUNCTION(BlueprintPure, Category="Weapon|Aim")
 	UAnimSequence* GetAimSequence() const { return CurrentAimAnim; }
+
+	// ===== Vital Stats =====
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals", meta=(ClampMin="0.0"))
+	float Health = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals", meta=(ClampMin="0.0"))
+	float MaxHealth = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals", meta=(ClampMin="0.0"))
+	float Stamina = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals", meta=(ClampMin="0.0"))
+	float MaxStamina = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals", meta=(ClampMin="0.0"))
+	float Hunger = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals", meta=(ClampMin="0.0"))
+	float MaxHunger = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals", meta=(ClampMin="0.0"))
+	float Thirst = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals", meta=(ClampMin="0.0"))
+	float MaxThirst = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals", meta=(ClampMin="0.0"))
+	float Radiation = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals", meta=(ClampMin="0.0"))
+	float MaxRadiation = 100.f;
+
+	/** Per-second drain rates (passive over time) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals|Drain", meta=(ClampMin="0.0"))
+	float HungerDrainRate = 0.08f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals|Drain", meta=(ClampMin="0.0"))
+	float ThirstDrainRate = 0.12f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals|Drain", meta=(ClampMin="0.0"))
+	float StaminaRegenRate = 10.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals|Drain", meta=(ClampMin="0.0"))
+	float StaminaDrainRate = 15.f;
+
+	/** HP damage per second at max radiation */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Vitals|Drain", meta=(ClampMin="0.0"))
+	float RadiationDPS = 3.f;
+
+	// ===== Firing =====
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Weapon|Fire")
+	bool bIsFiring = false;
+
+	FTimerHandle FireTimerHandle;
+
+	/** Max hitscan range in cm */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Fire", meta=(ClampMin="0.0"))
+	float FireRange = 10000.f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Vitals")
+	bool bIsDead = false;
+
+protected:
+	/** Drain hunger/thirst, regen stamina, push to HUD. Called from Tick(). */
+	void TickVitals(float DeltaSeconds);
+
+	/** Called when InventoryComponent fires OnItemUsed. Applies consumable effects to vitals. */
+	UFUNCTION()
+	void OnItemUsedHandler(UItemObject* Item);
+
+	/** Apply FConsumablesStats restore values to vitals. */
+	void ApplyConsumable(const struct FConsumablesStats& Stats);
+
+	/** Handle character death (disable input, collapse, etc.) */
+	void Die();
+
+	/** Show death screen UI and schedule level restart. */
+	void ShowDeathScreen();
+
+public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="UI")
+	TSubclassOf<UUserWidget> DeathScreenWidgetClass;
+
+	UPROPERTY(Transient, BlueprintReadOnly, Category="UI")
+	TObjectPtr<UUserWidget> DeathScreenWidget = nullptr;
 };

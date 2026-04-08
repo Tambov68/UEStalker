@@ -302,6 +302,10 @@ struct FConsumablesStats
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Consumable")
 	float Thirst = 0.f;
 
+	/** Negative = removes radiation (anti-rad). Positive = adds radiation. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Consumable")
+	float Radiation = 0.f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Consumable")
 	float Weight = 0.f;
 };

@@ -13,11 +13,15 @@
 #include "Components/StaticMeshComponent.h"
 #include "UI/HUD/GameHUDWidget.h"
 #include "UI/Inventory/InventoryWidget.h"
+#include "Items/ItemObject.h"
+#include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Items/MasterItemActor.h"
 #include "Items/MasterItemDataAsset.h"
+#include "Engine/DamageEvents.h"
 #include "Items/ItemObject.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
@@ -139,6 +143,12 @@ void AMasterCharacter::BeginPlay()
 	UpdateWeaponVisuals();
 
 	ApplyFirstPersonTickSync();
+
+	// Bind consumable usage
+	if (IsValid(InventoryComponent))
+	{
+		InventoryComponent->OnItemUsed.AddDynamic(this, &AMasterCharacter::OnItemUsedHandler);
+	}
 }
 
 void AMasterCharacter::Tick(float DeltaSeconds)
@@ -146,6 +156,7 @@ void AMasterCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	UpdateAim(DeltaSeconds);
 	TickSyncedMontages();
+	TickVitals(DeltaSeconds);
 }
 
 void AMasterCharacter::StartAim()
@@ -509,6 +520,13 @@ void AMasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		if (ReloadAction)
 		{
 			EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AMasterCharacter::Reload);
+		}
+
+		// Fire Weapon (LMB)
+		if (FireAction)
+		{
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started,   this, &AMasterCharacter::StartFire);
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &AMasterCharacter::StopFire);
 		}
 	}
 	else
@@ -1333,4 +1351,279 @@ void AMasterCharacter::PickupItem()
 	{
 		ItemActor->WorldStackCount = Remaining;
 	}
+}
+
+// ===== Vital Stats =====
+void AMasterCharacter::TickVitals(float DeltaSeconds)
+{
+	if (bIsDead)
+	{
+		return;
+	}
+
+	// --- Hunger drain ---
+	Hunger = FMath::Max(0.f, Hunger - HungerDrainRate * DeltaSeconds);
+
+	// --- Thirst drain ---
+	Thirst = FMath::Max(0.f, Thirst - ThirstDrainRate * DeltaSeconds);
+
+	// --- Stamina: drain while sprinting, regen otherwise ---
+	if (bIsSprinting)
+	{
+		Stamina = FMath::Max(0.f, Stamina - StaminaDrainRate * DeltaSeconds);
+		if (Stamina <= 0.f)
+		{
+			StopSprint();
+		}
+	}
+	else
+	{
+		Stamina = FMath::Min(MaxStamina, Stamina + StaminaRegenRate * DeltaSeconds);
+	}
+
+	// --- HP damage when starving or dehydrated ---
+	const float StarveDPS = 2.f;
+	if (Hunger <= 0.f)
+	{
+		Health = FMath::Max(0.f, Health - StarveDPS * DeltaSeconds);
+	}
+	if (Thirst <= 0.f)
+	{
+	Health = FMath::Max(0.f, Health - StarveDPS * DeltaSeconds);
+	}
+
+	// --- Radiation HP drain (proportional to radiation level) ---
+	if (Radiation > 0.f && MaxRadiation > 0.f)
+	{
+		const float RadFraction = Radiation / MaxRadiation;
+		Health = FMath::Max(0.f, Health - RadiationDPS * RadFraction * DeltaSeconds);
+	}
+
+	// --- Push to HUD ---
+	if (IsValid(GameHUDWidget))
+	{
+		GameHUDWidget->UpdateVitals(
+			MaxHealth  > 0.f ? Health  / MaxHealth  : 0.f,
+			MaxStamina > 0.f ? Stamina / MaxStamina : 0.f,
+			MaxHunger  > 0.f ? Hunger  / MaxHunger  : 0.f,
+			MaxThirst  > 0.f ? Thirst  / MaxThirst  : 0.f,
+			MaxRadiation > 0.f ? Radiation / MaxRadiation : 0.f
+		);
+	}
+
+	// --- Death check ---
+	if (Health <= 0.f)
+	{
+		Die();
+	}
+}
+
+void AMasterCharacter::OnItemUsedHandler(UItemObject* Item)
+{
+	if (!IsValid(Item) || bIsDead)
+	{
+		return;
+	}
+
+	ApplyConsumable(Item->ConsumablesStats);
+}
+
+void AMasterCharacter::ApplyConsumable(const FConsumablesStats& Stats)
+{
+	Health  = FMath::Clamp(Health  + Stats.Health,  0.f, MaxHealth);
+	Stamina = FMath::Clamp(Stamina + Stats.Stamina, 0.f, MaxStamina);
+	Hunger  = FMath::Clamp(Hunger  + Stats.Hunger,  0.f, MaxHunger);
+	Thirst  = FMath::Clamp(Thirst  + Stats.Thirst,  0.f, MaxThirst);
+	Radiation = FMath::Clamp(Radiation + Stats.Radiation, 0.f, MaxRadiation);
+}
+
+void AMasterCharacter::Die()
+{
+	if (bIsDead)
+	{
+		return;
+	}
+
+	bIsDead = true;
+	Health = 0.f;
+
+	// Stop any movement
+	if (bIsSprinting)
+	{
+		StopSprint();
+	}
+
+	GetCharacterMovement()->DisableMovement();
+
+	// Disable player input
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		DisableInput(PC);
+	}
+
+	// Hide HUD
+	if (IsValid(GameHUDWidget))
+	{
+		GameHUDWidget->SetVisibility(ESlateVisibility::Hidden);
+	}
+
+	if (IsValid(InventoryWidget))
+	{
+		InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
+	}
+
+	UE_LOG(LogTemplateCharacter, Warning, TEXT("%s has died."), *GetName());
+
+	ShowDeathScreen();
+}
+
+void AMasterCharacter::ShowDeathScreen()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
+	{
+		return;
+	}
+
+	if (IsValid(DeathScreenWidgetClass))
+	{
+		DeathScreenWidget = CreateWidget<UUserWidget>(PC, DeathScreenWidgetClass);
+		if (IsValid(DeathScreenWidget))
+		{
+			DeathScreenWidget->AddToViewport(100);
+		}
+	}
+
+	// Show mouse cursor
+	PC->bShowMouseCursor = true;
+	PC->SetInputMode(FInputModeUIOnly());
+
+	// Schedule level restart after 5 seconds
+	FTimerHandle RestartHandle;
+	TWeakObjectPtr<UWorld> WeakWorld = GetWorld();
+	GetWorldTimerManager().SetTimer(RestartHandle, [WeakWorld]()
+	{
+		if (UWorld* W = WeakWorld.Get())
+		{
+			UGameplayStatics::OpenLevel(W, FName(*W->GetName()));
+		}
+	}, 5.f, false);
+}
+
+// ===== Weapon Firing =====
+void AMasterCharacter::StartFire()
+{
+	if (bIsDead || bIsFiring)
+	{
+		return;
+	}
+
+	// Must have an active weapon
+	AMasterWeaponActor* WeaponActor = GetActiveWeaponActor();
+	if (!IsValid(WeaponActor))
+	{
+		return;
+	}
+
+	bIsFiring = true;
+
+	// Fire immediately
+	FireShot();
+
+	// Get fire rate from the ItemObject on the active equipment slot
+	UItemObject* ActiveItem = nullptr;
+	if (IsValid(EquipmentComponent))
+	{
+		ActiveItem = EquipmentComponent->GetItemInSlot(ActiveWeaponSlot);
+	}
+
+	float RPM = ActiveItem ? ActiveItem->WeaponStatsConfig.FireRateRPM : 600.f;
+	if (RPM <= 0.f) RPM = 600.f;
+	const float FireInterval = 60.f / RPM;
+
+	// Schedule repeating fire
+	GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AMasterCharacter::FireShot, FireInterval, true);
+}
+
+void AMasterCharacter::StopFire()
+{
+	bIsFiring = false;
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+}
+
+void AMasterCharacter::FireShot()
+{
+	if (bIsDead)
+	{
+		StopFire();
+		return;
+	}
+
+	AMasterWeaponActor* WeaponActor = GetActiveWeaponActor();
+	if (!IsValid(WeaponActor))
+	{
+		StopFire();
+		return;
+	}
+
+	// Check ammo via the inserted magazine
+	UItemObject* ActiveItem = nullptr;
+	if (IsValid(EquipmentComponent))
+	{
+		ActiveItem = EquipmentComponent->GetItemInSlot(ActiveWeaponSlot);
+	}
+
+	if (IsValid(ActiveItem))
+	{
+		UItemObject* Magazine = ActiveItem->GetInsertedMagazine();
+		if (IsValid(Magazine))
+		{
+			const int32 CurrentAmmo = Magazine->GetMagazineCurrentAmmo();
+			if (CurrentAmmo <= 0)
+			{
+				StopFire();
+				return; // empty mag
+			}
+			Magazine->SetMagazineCurrentAmmo(CurrentAmmo - 1);
+		}
+	}
+
+	// Line trace from camera
+	const FVector TraceStart = FPSCamera->GetComponentLocation();
+	const FVector TraceEnd = TraceStart + FPSCamera->GetForwardVector() * FireRange;
+
+	FHitResult HitResult;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_Visibility, QueryParams))
+	{
+		const float Damage = ActiveItem ? ActiveItem->WeaponStatsConfig.Damage : 10.f;
+
+		AActor* HitActor = HitResult.GetActor();
+		if (IsValid(HitActor))
+		{
+			FPointDamageEvent DmgEvent(Damage, HitResult, (HitResult.ImpactPoint - TraceStart).GetSafeNormal(), nullptr);
+			HitActor->TakeDamage(Damage, DmgEvent, GetController(), this);
+		}
+	}
+}
+
+float AMasterCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (bIsDead)
+	{
+		return 0.f;
+	}
+
+	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	Health = FMath::Max(0.f, Health - ActualDamage);
+
+	if (Health <= 0.f)
+	{
+		Die();
+	}
+
+	return ActualDamage;
 }
