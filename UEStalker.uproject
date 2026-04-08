@@ -1,0 +1,19 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.7",
+	"Category": "Games",
+	"Description": "Project for UE Stalker ",
+	"Modules": [
+		{
+			"Name": "UEStalker",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "Aura",
+			"Enabled": true
+		}
+	]
+}

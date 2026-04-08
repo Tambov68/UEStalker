@@ -3,6 +3,7 @@
 #include "Editor/StalkerAnimJitterFixer.h"
 
 #include "Editor.h"
+#include "Subsystems/ImportSubsystem.h"
 #include "Factories/Factory.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -237,7 +238,10 @@ void FStalkerAnimJitterFixer::Startup()
 
 	if (!PostImportHandle.IsValid())
 	{
-		PostImportHandle = FEditorDelegates::OnAssetPostImport.AddStatic(&OnAssetPostImport);
+		if (UImportSubsystem* ImportSub = GEditor->GetEditorSubsystem<UImportSubsystem>())
+		{
+			PostImportHandle = ImportSub->OnAssetPostImport.AddStatic(&OnAssetPostImport);
+		}
 	}
 
 	UE_LOG(LogStalkerAnimJitterFix, Display, TEXT("StalkerAnimJitterFixer started. Console: Stalker.FixAnimJitter"));
@@ -249,7 +253,10 @@ void FStalkerAnimJitterFixer::Shutdown()
 
 	if (PostImportHandle.IsValid())
 	{
-		FEditorDelegates::OnAssetPostImport.Remove(PostImportHandle);
+		if (UImportSubsystem* ImportSub = GEditor->GetEditorSubsystem<UImportSubsystem>())
+		{
+			ImportSub->OnAssetPostImport.Remove(PostImportHandle);
+		}
 		PostImportHandle.Reset();
 	}
 	GBoneSettings.Reset();

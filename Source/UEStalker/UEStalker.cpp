@@ -27,4 +27,4 @@ public:
 	}
 };
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, UEStalker, "UEStalker" );
+IMPLEMENT_PRIMARY_GAME_MODULE( FUEStalkerModule, UEStalker, "UEStalker" );

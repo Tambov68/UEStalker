@@ -16,33 +16,23 @@ public class UEStalker : ModuleRules
 			"InputCore", 
 			"Paper2D", 
 			"EnhancedInput",
-			
-			// editor
-			"UnrealEd",
-			"UMG",
-			"Slate",
-			"SlateCore",
-			"PropertyEditor",
+			"UMG"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "AnimGraphRuntime" });
+		PrivateDependencyModuleNames.AddRange(new string[] { 
+			"Slate",
+			"SlateCore"
+		});
 		
 		if (Target.bBuildEditor)
 		{
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{
 				"UnrealEd",
+				"PropertyEditor",
 				"AssetRegistry",
-				"AnimationBlueprintLibrary",
+				"AnimationBlueprintLibrary"
 			});
 		}
-
-		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-		
-		// Uncomment if you are using online features
-		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
-
-		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
 	}
 }

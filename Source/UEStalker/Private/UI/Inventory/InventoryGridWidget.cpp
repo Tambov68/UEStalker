@@ -562,7 +562,7 @@ int32 UInventoryGridWidget::NativePaint(
 			FSlateDrawElement::MakeBox(
 				OutDrawElements,
 				RetLayer + 1,
-				AllottedGeometry.ToPaintGeometry(BoxPos, FVector2D(BoxW, BoxH)),
+				AllottedGeometry.ToPaintGeometry(FVector2f(BoxW, BoxH), FSlateLayoutTransform(FVector2f(BoxPos))),
 				WhiteBrush,
 				ESlateDrawEffect::None,
 				Tint
